@@ -15,8 +15,8 @@ const pool = mysql.createPool({
 const pool = mysql.createPool({
   host: "caboose.proxy.rlwy.net",
   user: "root",
-  port: 58481, // ← CORRETO (com p minúsculo)
-  password: "aBUWNJpucgaWxPFgujWGitvPDWvQaTZR",
+  port: 18833, // ← CORRETO (com p minúsculo)
+  password: "pzmFuGklAQqcuVSvhmcgdQVbvtGKIwsJ",
   database: "vendasdb",
   waitForConnections: true,
   connectionLimit: 10,
