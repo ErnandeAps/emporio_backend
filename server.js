@@ -5,10 +5,10 @@ const path = require("path");
 const mercadopago = require("mercadopago");
 const { dbPromise } = require("./db");
 
+// Rotas do projeto
 const clientesRoutes = require("./routes/clientes");
 const vendasRoutes = require("./routes/vendas");
 const produtosRoutes = require("./routes/produtos");
-const categoriasRoutes = require("./routes/categorias");
 const carrinhoRoutes = require("./routes/carrinho");
 const promocoesRoutes = require("./routes/promocoes");
 const lojasRoutes = require("./routes/lojas");
@@ -18,17 +18,17 @@ const imgprodutosRoutes = require("./routes/imgprodutos");
 const imgcategoriasRoutes = require("./routes/imgcategorias");
 
 const app = express();
-//const port = 3000;
+const port = 3000;
 
 app.use(cors());
 app.use(bodyParser.json());
 
 app.use("/imagens", express.static(path.join(__dirname, "imagens")));
 
+// Rotas do app
 app.use("/clientes", clientesRoutes);
 app.use("/vendas", vendasRoutes);
 app.use("/produtos", produtosRoutes);
-app.use("/categorias", categoriasRoutes);
 app.use("/carrinho", carrinhoRoutes);
 app.use("/promocoes", promocoesRoutes);
 app.use("/lojas", lojasRoutes);
@@ -37,7 +37,9 @@ app.use("/pix", pixRoutes);
 app.use("/imgprodutos", imgprodutosRoutes);
 app.use("/imgcategorias", imgcategoriasRoutes);
 
+// ✅ Webhook do Mercado Pago (notificações automáticas)
 app.post("/webhooks", async (req, res) => {
+  //Atualiza o Id_pagamento no pedido
   if (req.body?.data?.id) {
     const paymentId = req.body.data.id;
     const pagamento = await mercadopago.payment.findById(paymentId);
@@ -62,6 +64,7 @@ app.post("/webhooks", async (req, res) => {
   res.sendStatus(200);
 });
 
+// ✅ Rotas de retorno visual para testes via navegador
 app.get("/pagamento/sucesso", (req, res) => {
   res.send("✅ Pagamento aprovado com sucesso!");
 });
@@ -74,7 +77,12 @@ app.get("/pagamento/pendente", (req, res) => {
   res.send("⏳ Seu pagamento está pendente de aprovação.");
 });
 
-const port = process.env.PORT || 3000;
+// Iniciar servidor
+/*
+app.listen(port, "0.0.0.0", () => {
+  console.log(`🚀 Servidor rodando em http://192.168.0.26:${port}`);
+});
+*/
 app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`);
 });
