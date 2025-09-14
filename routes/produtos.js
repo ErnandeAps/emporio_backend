@@ -5,7 +5,16 @@ const { dbPromise } = require("../db");
 // Listar todos produtos
 router.get("/", async (req, res) => {
   try {
-    const [results] = await dbPromise.query("SELECT * FROM produtos");
+    const { cnpj } = req.query;
+    if (!cnpj) {
+      return res.status(400).json({ erro: "CNPJ não informado" });
+    }
+
+    const [results] = await dbPromise.query(
+      "SELECT * FROM produtos WHERE cnpj = ?",
+      [cnpj]
+    );
+
     res.json(results);
   } catch (err) {
     console.error("Erro ao listar produtos:", err);
@@ -15,12 +24,17 @@ router.get("/", async (req, res) => {
 
 // GET /produtos/busca?nome=ração
 router.get("/busca", async (req, res) => {
+  const { cnpj } = req.query;
   const nome = req.query.nome;
+
+  if (!cnpj) {
+    return res.status(400).json({ erro: "CNPJ não informado" });
+  }
 
   try {
     const [rows] = await dbPromise.query(
-      "SELECT * FROM produtos WHERE produto LIKE ?",
-      [`%${nome}%`]
+      "SELECT * FROM produtos WHERE cnpj = ? and produto LIKE ?",
+      [cnpj, `%${nome}%`]
     );
     res.json(rows);
   } catch (err) {
@@ -32,10 +46,15 @@ router.get("/busca", async (req, res) => {
 // Buscar produto por ID
 router.get("/id/:id", async (req, res) => {
   const { id } = req.params;
+  const { cnpj } = req.query;
+  if (!cnpj) {
+    return res.status(400).json({ erro: "CNPJ não informado" });
+  }
+
   try {
     const [results] = await dbPromise.query(
-      "SELECT * FROM produtos WHERE id = ?",
-      [id]
+      "SELECT * FROM produtos WHERE cnpj = ? and id = ?",
+      [cnpj, id]
     );
     if (results.length === 0) {
       return res.status(404).send("Produto não encontrado");
@@ -50,10 +69,16 @@ router.get("/id/:id", async (req, res) => {
 // Buscar produtos por grupo
 router.get("/grupo/:grupo", async (req, res) => {
   const { grupo } = req.params;
+  const { cnpj } = req.query;
+
+  if (!cnpj) {
+    return res.status(400).json({ erro: "CNPJ não informado" });
+  }
+
   try {
     const [results] = await dbPromise.query(
-      "SELECT * FROM produtos WHERE grupo = ?",
-      [grupo]
+      "SELECT * FROM produtos WHERE cnpj = ? and categoria = ?",
+      [cnpj, grupo]
     );
     if (results.length === 0) {
       return res.status(404).send("Produto não encontrado");
@@ -83,9 +108,18 @@ router.post("/", async (req, res) => {
 // Atualizar produto
 router.put("/:id", async (req, res) => {
   const { id } = req.params;
+  const { cnpj } = req.query;
+  if (!cnpj) {
+    return res.status(400).json({ erro: "CNPJ não informado" });
+  }
+
   const produto = req.body;
   try {
-    await dbPromise.query("UPDATE produtos SET ? WHERE id = ?", [produto, id]);
+    await dbPromise.query("UPDATE produtos SET ? WHERE cnpj = ? and id = ?", [
+      produto,
+      cnpj,
+      id,
+    ]);
     res.json({ id, ...produto });
   } catch (err) {
     console.error("Erro ao atualizar produto:", err);
@@ -96,8 +130,16 @@ router.put("/:id", async (req, res) => {
 // Excluir produto
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
+  const { cnpj } = req.query;
+  if (!cnpj) {
+    return res.status(400).json({ erro: "CNPJ não informado" });
+  }
+
   try {
-    await dbPromise.query("DELETE FROM produtos WHERE id = ?", [id]);
+    await dbPromise.query("DELETE FROM produtos WHERE cnpj = ? and id = ?", [
+      cnpj,
+      id,
+    ]);
     res.send("Produto deletado com sucesso");
   } catch (err) {
     console.error("Erro ao deletar produto:", err);

@@ -5,11 +5,12 @@ const { dbPromise } = require("../db");
 // 🔸 Listar todos os itens do carrinho por celular
 router.get("/:dispositivos/:param", async (req, res) => {
   try {
+    const { cnpj } = req.query;
     const { param } = req.params;
     //console.log("Requisição", { param });
     const [rows] = await dbPromise.query(
-      "SELECT * FROM carrinho WHERE device_id = ?",
-      [param]
+      "SELECT * FROM carrinho WHERE cnpj = ? and device_id = ?",
+      [cnpj, param]
     );
     //console.log("lista produtos", res.json(rows));
     res.json(rows);
@@ -20,8 +21,10 @@ router.get("/:dispositivos/:param", async (req, res) => {
 
 // 🔸 Inserir item no carrinho
 router.post("/", async (req, res) => {
+  const { cnpj } = req.query;
   const { id_produto, device_id, qtd = 1, valor } = req.body;
-  //console.log("Requisição:", req.body);
+
+  console.log("Requisição:", req.body);
   if (!id_produto || !device_id) {
     return res
       .status(400)
@@ -30,8 +33,8 @@ router.post("/", async (req, res) => {
 
   try {
     const [produtoResult] = await dbPromise.query(
-      "SELECT * FROM produtos WHERE id = ?",
-      [id_produto]
+      "SELECT * FROM produtos WHERE cnpj = ? and codigo = ?",
+      [cnpj, id_produto]
     );
 
     if (produtoResult.length === 0) {
@@ -40,7 +43,8 @@ router.post("/", async (req, res) => {
 
     const produto = produtoResult[0];
     const itemCarrinho = {
-      id_produto: produto.id,
+      cnpj: produto.cnpj,
+      id_produto: produto.codigo,
       produto: produto.produto,
       valor: valor,
       qtd,
@@ -61,8 +65,10 @@ router.post("/", async (req, res) => {
 
 // 🔸 Atualizar quantidade de um item no carrinho
 router.put("/:id", async (req, res) => {
+  const { cnpj } = req.query;
   const { id } = req.params;
   const { qtd } = req.body;
+  console.log("Requisição para deletar item:", { id, cnpj, qtd });
 
   if (typeof qtd !== "number" || qtd < 1) {
     return res.status(400).json({ error: "Quantidade inválida" });
@@ -70,8 +76,8 @@ router.put("/:id", async (req, res) => {
 
   try {
     await dbPromise.query(
-      "UPDATE carrinho SET qtd = ?, total = valor * ? WHERE id = ?",
-      [qtd, qtd, id]
+      "UPDATE carrinho SET qtd = ?, total = valor * ? WHERE cnpj = ? and id = ?",
+      [qtd, qtd, cnpj, id]
     );
     res.json({ msg: "Quantidade atualizada com sucesso" });
   } catch (err) {
@@ -82,7 +88,13 @@ router.put("/:id", async (req, res) => {
 // 🔸 Deletar item do carrinho
 router.delete("/:id", async (req, res) => {
   try {
-    await dbPromise.query("DELETE FROM carrinho WHERE id = ?", [req.params.id]);
+    const { cnpj } = req.query;
+    const { id } = req.params;
+    console.log("Requisição para deletar item:", { id, cnpj });
+    await dbPromise.query("DELETE FROM carrinho WHERE cnpj = ? and id = ?", [
+      cnpj,
+      id,
+    ]);
     res.json({ msg: "Item excluído com sucesso" });
   } catch (err) {
     res.status(500).json({ erro: err.message });
@@ -92,14 +104,14 @@ router.delete("/:id", async (req, res) => {
 // 🔸 Finalizar pedido: move carrinho para vendas e vendasitens
 router.post("/finalizar", async (req, res) => {
   const { celular, formaPagamento, tipoEntrega } = req.body;
-
+  const { cnpj } = req.query;
   const conn = await dbPromise.getConnection();
   await conn.beginTransaction();
 
   try {
     const [itensCarrinho] = await conn.query(
-      "SELECT * FROM carrinho WHERE celular = ?",
-      [celular]
+      "SELECT * FROM carrinho WHERE cnpj = ? and celular = ?",
+      [cnpj, celular]
     );
 
     if (itensCarrinho.length === 0) {
@@ -113,18 +125,19 @@ router.post("/finalizar", async (req, res) => {
     );
 
     const [vendaResult] = await conn.query(
-      `INSERT INTO vendas (celular, forma_pagamento, tipo_entrega, total, data)
-       VALUES (?, ?, ?, ?, NOW())`,
-      [celular, formaPagamento, tipoEntrega, total]
+      `INSERT INTO vendas (cnpj, celular, forma_pagamento, tipo_entrega, total, data)
+       VALUES (?,?, ?, ?, ?, NOW())`,
+      [cnpj, celular, formaPagamento, tipoEntrega, total]
     );
 
     const idVenda = vendaResult.insertId;
 
     for (const item of itensCarrinho) {
       await conn.query(
-        `INSERT INTO vendasitens (id_venda, id_produto, produto, valor, qtd, total)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO vendasitens (cnpj, id_venda, id_produto, produto, valor, qtd, total)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
+          cnpj,
           idVenda,
           item.id_produto,
           item.produto,

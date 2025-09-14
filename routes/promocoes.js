@@ -4,7 +4,17 @@ const { dbPromise } = require("../db");
 
 router.get("/", async (req, res) => {
   try {
-    const [results] = await dbPromise.query("SELECT * FROM promocoes");
+    const { cnpj } = req.query;
+    console.log("requisição", cnpj);
+
+    if (!cnpj) {
+      return res.status(400).json({ erro: "CNPJ não informado" });
+    }
+    //console.log("CNPJ recebido:", cnpj);
+    const [results] = await dbPromise.query(
+      "SELECT * FROM promocoes WHERE cnpj = ?",
+      [cnpj]
+    );
     res.json(results);
   } catch (err) {
     res.status(500).json({ erro: err.message });

@@ -14,11 +14,12 @@ router.post("/", async (req, res) => {
   const device_id = req.body.device_id.trim();
   const tipo_entrega = req.body.tipo_entrega.trim();
   const st_pagamento = "Pendente";
+  const { cnpj } = req.query;
 
   //Pega os dados do cliente
   const [Cliente] = await dbPromise.query(
-    "SELECT * FROM clientes WHERE device_id = ?",
-    [device_id]
+    "SELECT * FROM clientes WHERE cnpj = ? and device_id = ?",
+    [cnpj, device_id]
   );
 
   if (!Cliente[0]) {
@@ -29,8 +30,8 @@ router.post("/", async (req, res) => {
 
   //Pega os itens do carrinho
   const [itensCarrinho] = await dbPromise.query(
-    "SELECT * FROM carrinho WHERE device_id = ?",
-    [device_id]
+    "SELECT * FROM carrinho WHERE cnpj = ? and device_id = ?",
+    [cnpj, device_id]
   );
 
   if (!itensCarrinho[0]) {
@@ -42,33 +43,45 @@ router.post("/", async (req, res) => {
      SUM(qtd) AS totalItens, 
      SUM(qtd * valor) AS totalValor 
    FROM carrinho 
-   WHERE device_id = ?`,
-    [device_id]
+   WHERE cnpj = ? and device_id = ?`,
+    [cnpj, device_id]
   );
   const totalItens = somaTotal[0].totalItens;
   const totalValor = somaTotal[0].totalValor;
 
+  const [rows] = await dbPromise.query(
+    "SELECT COALESCE(MAX(id_venda), 0) + 1 AS proximo_id FROM vendas WHERE cnpj = ?",
+    [cnpj]
+  );
+
   const [vendaResult] = await dbPromise.query(
-    `INSERT INTO vendas (device_id, telefone, id_cliente, nome, tipo_entrega, st_pagamento, total, data)
-   VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+    `INSERT INTO vendas (cnpj,id_venda, device_id, telefone, id_cliente, cpf, nome, tipo_entrega,st_entrega, st_pagamento, total, status, data)
+   VALUES (?,?,?,?,?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
     [
+      cnpj,
+      (id_venda = rows[0].proximo_id),
       device_id,
       cliente.telefone,
       cliente.id,
+      cliente.cpf,
       cliente.nome,
       tipo_entrega,
+      "Aguardando",
       st_pagamento,
       somaTotal[0].totalValor,
+      "Novo",
     ]
   );
 
-  const idVenda = vendaResult.insertId;
+  const idVenda = rows[0].proximo_id;
+  console.log("ID da venda criada:", idVenda);
 
   for (const item of itensCarrinho) {
     await dbPromise.query(
-      `INSERT INTO vendasitens (id_venda, device_id, id_produto, produto, valor, qtd, total)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO vendasitens (cnpj, id_venda, device_id, id_produto, produto, valor, qtd, total)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
+        cnpj,
         idVenda,
         device_id,
         item.id_produto,
@@ -80,9 +93,10 @@ router.post("/", async (req, res) => {
     );
   }
 
-  await dbPromise.query("DELETE FROM carrinho WHERE device_id = ?", [
-    device_id,
-  ]);
+  await dbPromise.query(
+    "DELETE FROM carrinho WHERE cnpj = ? and device_id = ?",
+    [cnpj, device_id]
+  );
 
   const preference = {
     external_reference: idVenda.toString(),
@@ -121,11 +135,11 @@ router.post("/", async (req, res) => {
 //**************************************************************************************************** */
 router.post("/pagamento/:id_venda", async (req, res) => {
   const id_venda = req.params.id_venda;
-
+  const { cnpj } = req.query;
   // Verifica se o ID da venda foi fornecido
   const [Pedido] = await dbPromise.query(
-    "SELECT * FROM vendas WHERE id_venda = ?",
-    [id_venda]
+    "SELECT * FROM vendas WHERE cnpj = ? and id_venda = ?",
+    [cnpj, id_venda]
   );
 
   const pedido = Pedido[0];
@@ -173,6 +187,7 @@ router.post("/pagamento/:id_venda", async (req, res) => {
 // ✅ Rota para exibir o Checkout Bricks via WebView no app
 router.get("/pagamento/:id", (req, res) => {
   const { id } = req.params;
+  const { cnpj } = req.query;
   res.send(`
     <!DOCTYPE html>
     <html lang="pt-BR">
