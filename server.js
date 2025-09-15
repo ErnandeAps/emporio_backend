@@ -17,6 +17,7 @@ const pixRoutes = require("./routes/pix");
 const checkoutRoutes = require("./routes/checkout");
 const imgprodutosRoutes = require("./routes/imgprodutos");
 const imgcategoriasRoutes = require("./routes/imgcategorias");
+const cidadesRoutes = require("./routes/cidades");
 
 const app = express();
 const port = 3000;
@@ -38,6 +39,7 @@ app.use("/checkout", checkoutRoutes);
 app.use("/pix", pixRoutes);
 app.use("/imgprodutos", imgprodutosRoutes);
 app.use("/imgcategorias", imgcategoriasRoutes);
+app.use("/cidades", cidadesRoutes);
 
 // ✅ Webhook do Mercado Pago (notificações automáticas)
 app.post("/webhooks", async (req, res) => {
