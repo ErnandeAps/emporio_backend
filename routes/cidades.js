@@ -11,7 +11,7 @@ router.get("/", async (req, res) => {
     }
 
     const [results] = await dbPromise.query(
-      "SELECT idcidade, nome, uf FROM cidade WHERE cnpj = ? ORDER BY nome ASC",
+      "SELECT idcidade, nome FROM cidade WHERE cnpj = ? ORDER BY nome ASC",
       [cnpj]
     );
 
