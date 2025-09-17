@@ -56,7 +56,6 @@ router.get("/itens/:id_venda", async (req, res) => {
   const { id_venda } = req.params;
   const { cnpj } = req.query;
 
-  console.log("ID da venda:", id_venda, cnpj);
   try {
     const [itens] = await dbPromise.query(
       "SELECT * FROM vendasitens WHERE cnpj = ? and id_venda = ?",
@@ -159,9 +158,7 @@ router.delete("/:id", async (req, res) => {
 router.post("/recompra/:id_venda", async (req, res) => {
   const { id_venda } = req.params;
   const { cnpj } = req.query;
-  console.log("Recomprar pedido ID:", id_venda, "CNPJ:", cnpj);
 
-  //console.log("ID da venda:", id_venda);
   try {
     const [vendaRows] = await dbPromise.query(
       "SELECT * FROM vendas WHERE cnpj = ? and id_venda = ?",

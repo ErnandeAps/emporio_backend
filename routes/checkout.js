@@ -13,6 +13,7 @@ mercadopago.configure({
 router.post("/", async (req, res) => {
   const device_id = req.body.device_id.trim();
   const tipo_entrega = req.body.tipo_entrega.trim();
+  const valor_frete = parseFloat(req.body.valor_frete) || 0;
   const st_pagamento = "Pendente";
   const { cnpj } = req.query;
 
@@ -47,16 +48,23 @@ router.post("/", async (req, res) => {
     [cnpj, device_id]
   );
   const totalItens = somaTotal[0].totalItens;
-  const totalValor = somaTotal[0].totalValor;
+  const totalValor = Number(somaTotal[0].totalValor) || 0;
+  let valorTotal = 0;
 
   const [rows] = await dbPromise.query(
     "SELECT COALESCE(MAX(id_venda), 0) + 1 AS proximo_id FROM vendas WHERE cnpj = ?",
     [cnpj]
   );
 
+  if (tipo_entrega === "Entrega") {
+    valorTotal = totalValor + valor_frete;
+  } else {
+    valorTotal = totalValor;
+  }
+
   const [vendaResult] = await dbPromise.query(
-    `INSERT INTO vendas (cnpj,id_venda, device_id, telefone, id_cliente, cpf, nome, tipo_entrega,st_entrega, st_pagamento, total, status, data)
-   VALUES (?,?,?,?,?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+    `INSERT INTO vendas (cnpj,id_venda, device_id, telefone, id_cliente, cpf, nome, tipo_entrega,st_entrega, st_pagamento, total, status,frete,valorTotal, data)
+   VALUES (?,?,?,?,?, ?, ?, ?, ?, ?, ?, ?,?,?, NOW())`,
     [
       cnpj,
       (id_venda = rows[0].proximo_id),
@@ -70,11 +78,12 @@ router.post("/", async (req, res) => {
       st_pagamento,
       somaTotal[0].totalValor,
       "Novo",
+      valor_frete,
+      valorTotal,
     ]
   );
 
   const idVenda = rows[0].proximo_id;
-  console.log("ID da venda criada:", idVenda);
 
   for (const item of itensCarrinho) {
     await dbPromise.query(

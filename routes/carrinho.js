@@ -7,12 +7,12 @@ router.get("/:dispositivos/:param", async (req, res) => {
   try {
     const { cnpj } = req.query;
     const { param } = req.params;
-    //console.log("Requisição", { param });
+
     const [rows] = await dbPromise.query(
       "SELECT * FROM carrinho WHERE cnpj = ? and device_id = ?",
       [cnpj, param]
     );
-    //console.log("lista produtos", res.json(rows));
+
     res.json(rows);
   } catch (err) {
     res.status(500).json({ erro: err.message });
@@ -24,7 +24,6 @@ router.post("/", async (req, res) => {
   const { cnpj } = req.query;
   const { id_produto, device_id, qtd = 1, valor } = req.body;
 
-  console.log("Requisição:", req.body);
   if (!id_produto || !device_id) {
     return res
       .status(400)
@@ -68,7 +67,6 @@ router.put("/:id", async (req, res) => {
   const { cnpj } = req.query;
   const { id } = req.params;
   const { qtd } = req.body;
-  console.log("Requisição para deletar item:", { id, cnpj, qtd });
 
   if (typeof qtd !== "number" || qtd < 1) {
     return res.status(400).json({ error: "Quantidade inválida" });
@@ -90,7 +88,7 @@ router.delete("/:id", async (req, res) => {
   try {
     const { cnpj } = req.query;
     const { id } = req.params;
-    console.log("Requisição para deletar item:", { id, cnpj });
+
     await dbPromise.query("DELETE FROM carrinho WHERE cnpj = ? and id = ?", [
       cnpj,
       id,
@@ -159,7 +157,6 @@ router.post("/finalizar", async (req, res) => {
     res
       .status(500)
       .json({ erro: "Erro ao finalizar pedido", detalhes: err.message });
-    console.log("Erro ao finalizar pedido", "detalhes :" + err.message);
   } finally {
     conn.release();
   }
