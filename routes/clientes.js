@@ -59,6 +59,7 @@ router.put("/:device_id", async (req, res) => {
   const { device_id } = req.params;
   const { cnpj } = req.query;
   const cliente = req.body;
+  console.log("Atualizando cliente:", device_id, cnpj, cliente);
 
   try {
     const [result] = await dbPromise.query(
