@@ -4,6 +4,10 @@ const bodyParser = require("body-parser");
 const path = require("path");
 const mercadopago = require("mercadopago");
 const { dbPromise } = require("./db");
+/*
+const MP_TEST_ACCESS_TOKEN =
+  "APP_USR-245728391973401-092913-5ca32a74083291fdc65f03a29efb6d88-2490530038";
+  */
 
 // Rotas do projeto
 const clientesRoutes = require("./routes/clientes");
@@ -21,6 +25,8 @@ const cidadesRoutes = require("./routes/cidades");
 
 const app = express();
 const port = 3000;
+
+let cnpj = String;
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -44,6 +50,7 @@ app.use("/cidades", cidadesRoutes);
 // ✅ Webhook do Mercado Pago (notificações automáticas)
 app.post("/webhooks", async (req, res) => {
   //Atualiza o Id_pagamento no pedido
+  //console.log("Webhook recebido:", req.body);
   if (req.body?.data?.id) {
     const paymentId = req.body.data.id;
     const pagamento = await mercadopago.payment.findById(paymentId);
@@ -52,17 +59,21 @@ app.post("/webhooks", async (req, res) => {
     const bandeira = pagamento.body.payment_method_id;
     const tipo_id = pagamento.body.payment_type_id;
     const motivo = pagamento.body.status_detail;
+    const collector_id = pagamento.body.collector_id;
 
-    console.log("Pagamento:", {
-      paymentId,
-      status,
-      id,
-      motivo,
-    });
+    const [empresaRows] = await dbPromise.query(
+      "SELECT * FROM empresas WHERE collector_id = ?",
+      [collector_id]
+    );
+    if (!empresaRows[0]) {
+      return res.status(404).json({ error: "Empresa não encontrada." });
+    }
+
+    cnpj = empresaRows[0].cnpj;
 
     const [rows] = await dbPromise.query(
-      "UPDATE vendas SET id_pagamento = ?, tipo_pagamento = ?, bandeira = ?, status = ?, st_pagamento = ? WHERE id_venda = ?",
-      [paymentId, tipo_id, bandeira, status, "Pago", id]
+      "UPDATE vendas SET id_pagamento = ?, tipo_pagamento = ?, bandeira = ?, status = ?, st_pagamento = ? WHERE id_venda = ? and cnpj = ?",
+      [paymentId, tipo_id, bandeira, status, "Pago", id, cnpj]
     );
   }
   res.sendStatus(200);

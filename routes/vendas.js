@@ -5,7 +5,7 @@ const { dbPromise } = require("../db");
 // 🔸 Listar todas as vendas
 router.get("/", async (req, res) => {
   try {
-    const { cnpj } = req.query;
+    const { cnpj } = req.params;
 
     const [results] = await dbPromise.query("SELECT * FROM vendas cnpj = ?", [
       cnpj,
@@ -20,6 +20,7 @@ router.get("/", async (req, res) => {
 // 🔸 Buscar uma venda por ID
 
 router.get("/:device_id", async (req, res) => {
+  console.log("Parâmetros da rota:", req.params);
   const params = req.params.device_id.trim();
   const { cnpj } = req.query;
   try {
