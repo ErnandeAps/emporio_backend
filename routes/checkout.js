@@ -7,22 +7,8 @@ const fetch = require("node-fetch"); // necessário para o webhook
 let empresa_acces_token = String;
 let empresa_nome = String;
 
-// =======================
-// ✅ Configuração do Mercado Pago (modo TESTE)
-// =======================
-const MP_TEST_ACCESS_TOKEN =
-  "APP_USR-245728391973401-092913-5ca32a74083291fdc65f03a29efb6d88-2490530038";
-const MP_TEST_PUBLIC_KEY = "APP_USR-b0669f64-7860-4efd-97f6-3937ba616e3d"; // apenas exemplo
-
 const end_point = "forca-vendas-backend-production.up.railway.app";
 
-mercadopago.configure({
-  access_token: MP_TEST_ACCESS_TOKEN,
-});
-
-// =======================
-// ✅ Rota para criar preferência de pagamento
-// =======================
 router.post("/", async (req, res) => {
   try {
     const device_id = req.body.device_id;
@@ -44,7 +30,7 @@ router.post("/", async (req, res) => {
     empresa_acces_token = empresaRows[0].access_token;
 
     // ⚠️ Aqui mantemos o token de teste para ambiente sandbox
-    mercadopago.configure({ access_token: MP_TEST_ACCESS_TOKEN });
+    mercadopago.configure({ access_token: empresa_acces_token });
 
     // Pega os dados do cliente
     const [Cliente] = await dbPromise.query(
@@ -197,6 +183,7 @@ router.post("/pagamento/:id_venda", async (req, res) => {
     const venda = vendas[0];
     const valorTotal = parseFloat(venda.valorTotal) || 0;
 
+    mercadopago.configure({ access_token: empresa_acces_token });
     const preference = {
       external_reference: id_venda.toString(),
       items: [
@@ -231,75 +218,6 @@ router.post("/pagamento/:id_venda", async (req, res) => {
     console.error("Erro ao criar preferência:", error);
     res.status(500).json({ error: "Erro ao criar preferência de pagamento." });
   }
-});
-
-// =======================
-// ✅ Webhook do Mercado Pago
-// =======================
-router.post("/webhooks", async (req, res) => {
-  try {
-    const body = req.body;
-    console.log("Webhook recebido:", body);
-
-    if (body.type === "payment" && body.data && body.data.id) {
-      const paymentId = body.data.id;
-
-      // Consulta detalhes do pagamento no Mercado Pago (sandbox)
-      const response = await fetch(
-        `https://api.mercadopago.com/v1/payments/${paymentId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${MP_TEST_ACCESS_TOKEN}`,
-          },
-        }
-      );
-
-      const paymentData = await response.json();
-      console.log("Detalhes do pagamento:", paymentData);
-
-      // Aqui você pode atualizar o status no banco
-      // await Pedido.update({ status: paymentData.status }, { where: { idPagamento: paymentId } });
-    }
-
-    res.sendStatus(200);
-  } catch (error) {
-    console.error("Erro ao processar webhook:", error);
-    res.sendStatus(500);
-  }
-});
-
-// =======================
-// ✅ Checkout Bricks via WebView
-// =======================
-router.get("/pagamento/:id", (req, res) => {
-  const { id } = req.params;
-  res.send(`
-    <!DOCTYPE html>
-    <html lang="pt-BR">
-    <head>
-      <meta charset="UTF-8" />
-      <title>Pagamento</title>
-      <script src="https://sdk.mercadopago.com/js/v2"></script>
-      <style>
-        body { display: flex; justify-content: center; padding: 40px; }
-      </style>
-    </head>
-    <body>
-      <div id="wallet_container"></div>
-      <script>
-        const mp = new MercadoPago("${MP_TEST_PUBLIC_KEY}", {
-          locale: "pt-BR"
-        });
-
-        mp.bricks().create("wallet", "wallet_container", {
-          initialization: {
-            preferenceId: "${id}"
-          }
-        });
-      </script>
-    </body>
-    </html>
-  `);
 });
 
 // =======================
