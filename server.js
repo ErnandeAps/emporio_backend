@@ -93,11 +93,6 @@ app.get("/pagamento/pendente", (req, res) => {
 });
 
 // Iniciar servidor
-/*
-app.listen(port, "0.0.0.0", () => {
-  console.log(`🚀 Servidor rodando em http://192.168.0.26:${port}`);
-});
-*/
 app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`);
 });
