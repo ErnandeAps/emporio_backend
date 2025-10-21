@@ -2,7 +2,10 @@ const express = require("express");
 const router = express.Router();
 const { dbPromise } = require("../db");
 const mercadopago = require("mercadopago");
-const fetch = require("node-fetch"); // necessário para o webhook
+//const fetch = require("node-fetch"); // necessário para o webhook
+
+const fetch = (...args) =>
+  import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 let empresa_acces_token = String;
 let empresa_nome = String;
