@@ -227,7 +227,7 @@ router.post("/pagamento/:id_venda", async (req, res) => {
 // ✅ Páginas de retorno
 // =======================
 router.get("/pagamento/sucesso", (req, res) => {
-  res.send("✅ Pagamento aprovado com sucesso!");
+  res.send("✅ Pagamento aprovado com sucesso! no checkout");
 });
 router.get("/pagamento/falha", (req, res) => {
   res.send("❌ Ocorreu um erro no pagamento.");

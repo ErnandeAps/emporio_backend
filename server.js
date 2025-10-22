@@ -81,7 +81,7 @@ app.post("/webhooks", async (req, res) => {
 
 // ✅ Rotas de retorno visual para testes via navegador
 app.get("/pagamento/sucesso", (req, res) => {
-  res.send("✅ Pagamento aprovado com sucesso!");
+  res.send("✅ Pagamento aprovado com sucesso! no server");
 });
 
 app.get("/pagamento/falha", (req, res) => {
