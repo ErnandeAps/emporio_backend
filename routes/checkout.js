@@ -10,7 +10,7 @@ const fetch = (...args) =>
 let empresa_acces_token = String;
 let empresa_nome = String;
 
-const end_point = "forca-vendas-backend-production.up.railway.app";
+const end_point = "https://forca-vendas-backend-production.up.railway.app";
 
 router.post("/", async (req, res) => {
   try {
