@@ -89,8 +89,9 @@ app.get("/pagamento/pendente", (req, res) => {
 });
 
 app.get("/pagamento/sucesso", (req, res) => {
-  const { payment_id, valor, nome } = req.query; // parâmetros opcionais
-
+  //const { payment_id, valor, nome } = req.query; // parâmetros opcionais
+  console.log("Dados do pagamento recebido:", req.body.data.id);
+  /*
   res.send(`
     <html>
       <head>
@@ -139,6 +140,8 @@ app.get("/pagamento/sucesso", (req, res) => {
       </body>
     </html>
   `);
+  */
+  res.send("✅ Pagamento aprovado com sucesso! no server da api");
 });
 
 // Iniciar servidor
