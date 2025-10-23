@@ -80,16 +80,65 @@ app.post("/webhooks", async (req, res) => {
 });
 
 // ✅ Rotas de retorno visual para testes via navegador
-app.get("/pagamento/sucesso", (req, res) => {
-  res.send("✅ Pagamento aprovado com sucesso! no server");
-});
-
 app.get("/pagamento/falha", (req, res) => {
   res.send("❌ Ocorreu um erro no pagamento.");
 });
 
 app.get("/pagamento/pendente", (req, res) => {
   res.send("⏳ Seu pagamento está pendente de aprovação.");
+});
+
+app.get("/pagamento/sucesso", (req, res) => {
+  const { payment_id, valor, nome } = req.query; // parâmetros opcionais
+
+  res.send(`
+    <html>
+      <head>
+        <title>Pagamento aprovado!</title>
+        <meta charset="UTF-8" />
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            background-color: #f6f9fc;
+            color: #333;
+            text-align: center;
+            padding: 40px;
+          }
+          .card {
+            background: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            max-width: 400px;
+            margin: auto;
+          }
+          .check {
+            font-size: 60px;
+            color: #4CAF50;
+          }
+          .btn {
+            display: inline-block;
+            margin-top: 20px;
+            background: #4CAF50;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="check">✅</div>
+          <h1>Pagamento Aprovado!</h1>
+          <p>Obrigado, <strong>${nome || "cliente"}</strong>!</p>
+          <p>Valor pago: <strong>R$ ${valor || "0,00"}</strong></p>
+          <p>ID do pagamento: <strong>${payment_id || "N/D"}</strong></p>
+          <a href="/" class="btn">Voltar ao App</a>
+        </div>
+      </body>
+    </html>
+  `);
 });
 
 // Iniciar servidor
