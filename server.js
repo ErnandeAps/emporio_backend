@@ -88,60 +88,67 @@ app.get("/pagamento/pendente", (req, res) => {
   res.send("⏳ Seu pagamento está pendente de aprovação.");
 });
 
-app.get("/pagamento/sucesso", (req, res) => {
-  //const { payment_id, valor, nome } = req.query; // parâmetros opcionais
-  console.log("Dados do pagamento recebido:", req.body.data.id);
-  /*
-  res.send(`
-    <html>
-      <head>
-        <title>Pagamento aprovado!</title>
-        <meta charset="UTF-8" />
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            background-color: #f6f9fc;
-            color: #333;
-            text-align: center;
-            padding: 40px;
-          }
-          .card {
-            background: #fff;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            max-width: 400px;
-            margin: auto;
-          }
-          .check {
-            font-size: 60px;
-            color: #4CAF50;
-          }
-          .btn {
-            display: inline-block;
-            margin-top: 20px;
-            background: #4CAF50;
-            color: #fff;
-            padding: 10px 20px;
-            border-radius: 10px;
-            text-decoration: none;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="card">
-          <div class="check">✅</div>
-          <h1>Pagamento Aprovado!</h1>
-          <p>Obrigado, <strong>${nome || "cliente"}</strong>!</p>
-          <p>Valor pago: <strong>R$ ${valor || "0,00"}</strong></p>
-          <p>ID do pagamento: <strong>${payment_id || "N/D"}</strong></p>
-          <a href="/" class="btn">Voltar ao App</a>
-        </div>
-      </body>
-    </html>
-  `);
-  */
-  res.send("✅ Pagamento aprovado com sucesso! no server da api");
+app.get("/pagamento/sucesso", async (req, res) => {
+  try {
+    const { payment_id } = req.query;
+
+    if (!payment_id) {
+      return res.send("<h3>❌ ID do pagamento não informado</h3>");
+    }
+
+    const [rows] = await dbPromise.query(
+      "SELECT * FROM pagamentos WHERE payment_id = ?",
+      [payment_id]
+    );
+
+    if (rows.length === 0) {
+      return res.send("<h3>Pagamento não encontrado no banco.</h3>");
+    }
+
+    const pag = rows[0];
+
+    res.send(`
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Pagamento Aprovado</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              background: #f5f8fa;
+              padding: 40px;
+              text-align: center;
+            }
+            .card {
+              background: #fff;
+              border-radius: 12px;
+              box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+              display: inline-block;
+              padding: 30px;
+              max-width: 400px;
+            }
+            .success { color: #2ecc71; font-size: 60px; }
+            .info { margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <div class="success">✅</div>
+            <h1>Pagamento aprovado!</h1>
+            <div class="info">
+              <p><strong>Cliente:</strong> ${pag.nome}</p>
+              <p><strong>Valor:</strong> R$ ${pag.valor.toFixed(2)}</p>
+              <p><strong>Status:</strong> ${pag.status}</p>
+              <p><strong>ID:</strong> ${pag.payment_id}</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+  } catch (err) {
+    console.error("Erro ao renderizar página:", err);
+    res.status(500).send("Erro ao carregar detalhes do pagamento");
+  }
 });
 
 // Iniciar servidor
