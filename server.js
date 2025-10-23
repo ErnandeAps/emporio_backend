@@ -97,7 +97,7 @@ app.get("/pagamento/sucesso", async (req, res) => {
     }
 
     const [rows] = await dbPromise.query(
-      "SELECT * FROM pagamentos WHERE payment_id = ?",
+      "SELECT * FROM vendas WHERE id_pagamento = ?",
       [payment_id]
     );
 
@@ -137,7 +137,7 @@ app.get("/pagamento/sucesso", async (req, res) => {
             <h1>Pagamento aprovado!</h1>
             <div class="info">
               <p><strong>Cliente:</strong> ${pag.nome}</p>
-              <p><strong>Valor:</strong> R$ ${pag.valor.toFixed(2)}</p>
+              <p><strong>Valor:</strong> R$ ${pag.valorTotal.toFixed(2)}</p>
               <p><strong>Status:</strong> ${pag.status}</p>
               <p><strong>ID:</strong> ${pag.payment_id}</p>
             </div>
